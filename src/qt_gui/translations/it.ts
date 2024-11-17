@@ -156,6 +156,11 @@
 			<translation>Copia Tutto</translation>
 		</message>
 		<message>
+			<location filename="../gui_context_menus.h" line="83"/>
+			<source>Report a Problem</source>
+			<translation>Segnala un problema</translation>
+		</message>
+		<message>
 			<location filename="../gui_context_menus.h" line="72"/>
 			<source>Delete...</source>
 			<translation>Elimina...</translation>

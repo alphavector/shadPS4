@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <fmt/core.h>
+
 #include <QClipboard>
 #include <QDesktopServices>
 #include <QMenu>
@@ -23,6 +25,8 @@
 #include <wrl/client.h>
 #endif
 #include "common/path_util.h"
+#include "common/scm_rev.h"
+#include "common/version.h"
 
 class GuiContextMenus : public QObject {
     Q_OBJECT
@@ -78,6 +82,10 @@ public:
         copyMenu->addAction(copyNameAll);
 
         menu.addMenu(copyMenu);
+
+        // "Report a Problem" submenu.
+        QAction* reportProblem = new QAction(tr("Report a Problem"), widget);
+        menu.addAction(reportProblem);
 
         // "Delete..." submenu.
         QMenu* deleteMenu = new QMenu(tr("Delete..."), widget);
@@ -314,6 +322,32 @@ public:
                                        .arg(QString::fromStdString(m_games[itemID].version))
                                        .arg(QString::fromStdString(m_games[itemID].size));
             clipboard->setText(combinedText);
+        }
+
+        if (selected == reportProblem) {
+            QString emulatorVersion;
+            QString title = QString("%1 - %2")
+                                .arg(QString::fromStdString(m_games[itemID].serial))
+                                .arg(QString::fromStdString(m_games[itemID].name));
+
+            if (Common::isRelease) {
+                emulatorVersion = Common::VERSION;
+            } else {
+                emulatorVersion = Common::g_scm_desc;
+            }
+
+            QUrl url("https://github.com/shadps4-emu/shadps4-game-compatibility/issues/new");
+
+            QUrlQuery query;
+            query.addQueryItem("template", "game_compatibility.yml");
+            query.addQueryItem("title", title);
+            query.addQueryItem("game-name", QString::fromStdString(m_games[itemID].name));
+            query.addQueryItem("game-code", QString::fromStdString(m_games[itemID].serial));
+            query.addQueryItem("game-version", QString::fromStdString(m_games[itemID].version));
+            query.addQueryItem("emulator-version", emulatorVersion);
+
+            url.setQuery(query);
+            QDesktopServices::openUrl(url);
         }
 
         if (selected == deleteGame || selected == deleteUpdate || selected == deleteDLC) {

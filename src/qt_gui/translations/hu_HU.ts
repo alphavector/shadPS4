@@ -156,6 +156,11 @@
 			<translation>Összes Másolása</translation>
 		</message>
 		<message>
+			<location filename="../gui_context_menus.h" line="83"/>
+			<source>Report a Problem</source>
+			<translation>Probléma jelentése</translation>
+		</message>
+		<message>
 			<location filename="../gui_context_menus.h" line="72"/>
 			<source>Delete...</source>
 			<translation>Törlés...</translation>

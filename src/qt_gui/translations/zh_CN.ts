@@ -156,6 +156,11 @@
 			<translation>复制全部</translation>
 		</message>
 		<message>
+			<location filename="../gui_context_menus.h" line="83"/>
+			<source>Report a Problem</source>
+			<translation>报告问题</translation>
+		</message>
+		<message>
 			<location filename="../gui_context_menus.h" line="72"/>
 			<source>Delete...</source>
 			<translation>删除...</translation>

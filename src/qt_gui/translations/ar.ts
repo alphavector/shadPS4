@@ -156,6 +156,11 @@
 			<translation>نسخ الكل</translation>
 		</message>
 		<message>
+			<location filename="../gui_context_menus.h" line="83"/>
+			<source>Report a Problem</source>
+			<translation>الإبلاغ عن مشكلة</translation>
+		</message>
+		<message>
 			<location filename="../gui_context_menus.h" line="72"/>
 			<source>Delete...</source>
 			<translation>Delete...</translation>
