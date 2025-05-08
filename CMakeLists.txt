@@ -259,6 +259,10 @@ add_subdirectory(externals)
 include_directories(src)
 include_directories(Resources)
 
+add_library(simde INTERFACE IMPORTED GLOBAL)
+target_include_directories(simde INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/externals/simde)
+target_compile_definitions(simde INTERFACE SIMDE_ENABLE_NATIVE_ALIASES)
+
 if(ENABLE_QT_GUI)
     find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent LinguistTools Network Multimedia)
     qt_standard_project_setup()

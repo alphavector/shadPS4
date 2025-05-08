@@ -2,22 +2,13 @@
 //  SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 
-#if defined(__x86_64__) || defined(_M_X64)
-    #include <xmmintrin.h>
-    using Simd128 = __m128;
-#elif defined(__aarch64__) || defined(__ARM_NEON)
-    #include <arm_neon.h>
-    using Simd128 = float32x4_t;
-#else
-    #error "Unsupported architecture: NEON or SSE required."
-#endif
-
+#include <simde/x86/sse.h>  // Replaces <xmmintrin.h>
 #include "common/types.h"
 
 #define VA_ARGS                                                                                    \
     uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, uint64_t r8, uint64_t r9,              \
-        uint64_t overflow_arg_area, Simd128 xmm0, Simd128 xmm1, Simd128 xmm2, Simd128 xmm3,        \
-        Simd128 xmm4, Simd128 xmm5, Simd128 xmm6, Simd128 xmm7, ...
+        uint64_t overflow_arg_area, simde__m128 xmm0, simde__m128 xmm1, simde__m128 xmm2,          \
+        simde__m128 xmm3, simde__m128 xmm4, simde__m128 xmm5, simde__m128 xmm6, simde__m128 xmm7, ...
 
 #define VA_CTX(ctx)                                                                                \
     alignas(16)::Common::VaCtx ctx{};                                                              \
@@ -51,7 +42,7 @@ struct VaList {
 
 struct VaRegSave {
     u64 gp[6];
-    Simd128 fp[8];
+    simde__m128 fp[8];
 };
 
 struct VaCtx {

@@ -110,3 +110,7 @@
 [submodule "externals/libusb"]
 	path = externals/libusb
 	url = https://github.com/libusb/libusb-cmake.git
+[submodule "externals/simde"]
+	path = externals/simde
+	url = https://github.com/simd-everywhere/simde
+	shallow = true
