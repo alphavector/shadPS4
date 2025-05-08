@@ -2,13 +2,22 @@
 //  SPDX-License-Identifier: GPL-2.0-or-later
 #pragma once
 
-#include <xmmintrin.h>
+#if defined(__x86_64__) || defined(_M_X64)
+    #include <xmmintrin.h>
+    using Simd128 = __m128;
+#elif defined(__aarch64__) || defined(__ARM_NEON)
+    #include <arm_neon.h>
+    using Simd128 = float32x4_t;
+#else
+    #error "Unsupported architecture: NEON or SSE required."
+#endif
+
 #include "common/types.h"
 
 #define VA_ARGS                                                                                    \
     uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, uint64_t r8, uint64_t r9,              \
-        uint64_t overflow_arg_area, __m128 xmm0, __m128 xmm1, __m128 xmm2, __m128 xmm3,            \
-        __m128 xmm4, __m128 xmm5, __m128 xmm6, __m128 xmm7, ...
+        uint64_t overflow_arg_area, Simd128 xmm0, Simd128 xmm1, Simd128 xmm2, Simd128 xmm3,        \
+        Simd128 xmm4, Simd128 xmm5, Simd128 xmm6, Simd128 xmm7, ...
 
 #define VA_CTX(ctx)                                                                                \
     alignas(16)::Common::VaCtx ctx{};                                                              \
@@ -33,8 +42,6 @@
 
 namespace Common {
 
-// https://stackoverflow.com/questions/4958384/what-is-the-format-of-the-x86-64-va-list-structure
-
 struct VaList {
     u32 gp_offset;
     u32 fp_offset;
@@ -44,7 +51,7 @@ struct VaList {
 
 struct VaRegSave {
     u64 gp[6];
-    __m128 fp[8];
+    Simd128 fp[8];
 };
 
 struct VaCtx {
@@ -58,6 +65,7 @@ T vaArgRegSaveAreaGp(VaList* l) {
     l->gp_offset += Size;
     return *addr;
 }
+
 template <class T, u64 Align, u64 Size>
 T vaArgOverflowArgArea(VaList* l) {
     auto ptr = ((reinterpret_cast<u64>(l->overflow_arg_area) + (Align - 1)) & ~(Align - 1));
@@ -86,6 +94,7 @@ inline long long vaArgLongLong(VaList* l) {
     }
     return vaArgOverflowArgArea<long long, 1, 8>(l);
 }
+
 inline long vaArgLong(VaList* l) {
     if (l->gp_offset <= 40) {
         return vaArgRegSaveAreaGp<long, 8>(l);
