@@ -15,18 +15,22 @@ namespace Common {
 
 void* GetXmmPointer(void* ctx, u8 index) {
 #if defined(_WIN32)
-#define CASE(index)                                                                                \
-    case index:                                                                                    \
-        return (void*)(&((EXCEPTION_POINTERS*)ctx)->ContextRecord->Xmm##index.Low)
-#elif defined(__APPLE__)
-#define CASE(index)                                                                                \
-    case index:                                                                                    \
-        return (void*)(&((ucontext_t*)ctx)->uc_mcontext->__fs.__fpu_xmm##index);
+#define CASE(index) \
+    case index: return (void*)(&((EXCEPTION_POINTERS*)ctx)->ContextRecord->Xmm##index.Low)
+
+#elif defined(__APPLE__) && defined(ARCH_X86_64)
+#define CASE(index) \
+    case index: return (void*)(&((ucontext_t*)ctx)->uc_mcontext->__fs.__fpu_xmm##index)
+
+#elif defined(__APPLE__) && defined(ARCH_ARM64)
+// No XMM register equivalent on Apple Silicon exposed via ucontext
+    return nullptr;
+
 #else
-#define CASE(index)                                                                                \
-    case index:                                                                                    \
-        return (void*)(&((ucontext_t*)ctx)->uc_mcontext.fpregs->_xmm[index].element[0])
+#define CASE(index) \
+    case index: return (void*)(&((ucontext_t*)ctx)->uc_mcontext.fpregs->_xmm[index].element[0])
 #endif
+
     switch (index) {
         CASE(0);
         CASE(1);
@@ -44,19 +48,21 @@ void* GetXmmPointer(void* ctx, u8 index) {
         CASE(13);
         CASE(14);
         CASE(15);
-    default: {
+    default:
         UNREACHABLE_MSG("Invalid XMM register index: {}", index);
         return nullptr;
     }
-    }
+
 #undef CASE
 }
 
 void* GetRip(void* ctx) {
 #if defined(_WIN32)
     return (void*)((EXCEPTION_POINTERS*)ctx)->ContextRecord->Rip;
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && defined(ARCH_X86_64)
     return (void*)((ucontext_t*)ctx)->uc_mcontext->__ss.__rip;
+#elif defined(__APPLE__) && defined(ARCH_ARM64)
+    return (void*)((ucontext_t*)ctx)->uc_mcontext->__ss.__pc;
 #else
     return (void*)((ucontext_t*)ctx)->uc_mcontext.gregs[REG_RIP];
 #endif
@@ -65,8 +71,10 @@ void* GetRip(void* ctx) {
 void IncrementRip(void* ctx, u64 length) {
 #if defined(_WIN32)
     ((EXCEPTION_POINTERS*)ctx)->ContextRecord->Rip += length;
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && defined(ARCH_X86_64)
     ((ucontext_t*)ctx)->uc_mcontext->__ss.__rip += length;
+#elif defined(__APPLE__) && defined(ARCH_ARM64)
+    ((ucontext_t*)ctx)->uc_mcontext->__ss.__pc += length;
 #else
     ((ucontext_t*)ctx)->uc_mcontext.gregs[REG_RIP] += length;
 #endif
@@ -75,13 +83,17 @@ void IncrementRip(void* ctx, u64 length) {
 bool IsWriteError(void* ctx) {
 #if defined(_WIN32)
     return ((EXCEPTION_POINTERS*)ctx)->ExceptionRecord->ExceptionInformation[0] == 1;
+
 #elif defined(__APPLE__)
 #if defined(ARCH_X86_64)
     return ((ucontext_t*)ctx)->uc_mcontext->__es.__err & 0x2;
 #elif defined(ARCH_ARM64)
     return ((ucontext_t*)ctx)->uc_mcontext->__es.__esr & 0x40;
-#endif
 #else
+    return false;
+#endif
+
+#else // Linux
 #if defined(ARCH_X86_64)
     return ((ucontext_t*)ctx)->uc_mcontext.gregs[REG_ERR] & 0x2;
 #else
@@ -89,4 +101,5 @@ bool IsWriteError(void* ctx) {
 #endif
 #endif
 }
+
 } // namespace Common
