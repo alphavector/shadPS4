@@ -22,10 +22,10 @@ void SigactionHandler(int signum, siginfo_t* inf, ucontext_t* raw_context) {
     const auto handler = Handlers[POSIX_SIGUSR1];
     if (handler) {
         auto ctx = Ucontext{};
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(ARCH_X86_64)
         const auto& regs = raw_context->uc_mcontext->__ss;
-        ctx.uc_mcontext.mc_r8 = regs.__r8;
-        ctx.uc_mcontext.mc_r9 = regs.__r9;
+        ctx.uc_mcontext.mc_r8  = regs.__r8;
+        ctx.uc_mcontext.mc_r9  = regs.__r9;
         ctx.uc_mcontext.mc_r10 = regs.__r10;
         ctx.uc_mcontext.mc_r11 = regs.__r11;
         ctx.uc_mcontext.mc_r12 = regs.__r12;
@@ -40,12 +40,18 @@ void SigactionHandler(int signum, siginfo_t* inf, ucontext_t* raw_context) {
         ctx.uc_mcontext.mc_rax = regs.__rax;
         ctx.uc_mcontext.mc_rcx = regs.__rcx;
         ctx.uc_mcontext.mc_rsp = regs.__rsp;
-        ctx.uc_mcontext.mc_fs = regs.__fs;
-        ctx.uc_mcontext.mc_gs = regs.__gs;
+        ctx.uc_mcontext.mc_fs  = regs.__fs;
+        ctx.uc_mcontext.mc_gs  = regs.__gs;
+#elif defined(__APPLE__) && defined(ARCH_ARM64)
+        // ARM64 does not use these registers, you may need to define ARM-specific mapping here
+        // or stub it out for now.
+        (void)raw_context;
+        // Optionally log a warning here if needed.
+        return;
 #else
         const auto& regs = raw_context->uc_mcontext.gregs;
-        ctx.uc_mcontext.mc_r8 = regs[REG_R8];
-        ctx.uc_mcontext.mc_r9 = regs[REG_R9];
+        ctx.uc_mcontext.mc_r8  = regs[REG_R8];
+        ctx.uc_mcontext.mc_r9  = regs[REG_R9];
         ctx.uc_mcontext.mc_r10 = regs[REG_R10];
         ctx.uc_mcontext.mc_r11 = regs[REG_R11];
         ctx.uc_mcontext.mc_r12 = regs[REG_R12];
@@ -60,8 +66,8 @@ void SigactionHandler(int signum, siginfo_t* inf, ucontext_t* raw_context) {
         ctx.uc_mcontext.mc_rax = regs[REG_RAX];
         ctx.uc_mcontext.mc_rcx = regs[REG_RCX];
         ctx.uc_mcontext.mc_rsp = regs[REG_RSP];
-        ctx.uc_mcontext.mc_fs = (regs[REG_CSGSFS] >> 32) & 0xFFFF;
-        ctx.uc_mcontext.mc_gs = (regs[REG_CSGSFS] >> 16) & 0xFFFF;
+        ctx.uc_mcontext.mc_fs  = (regs[REG_CSGSFS] >> 32) & 0xFFFF;
+        ctx.uc_mcontext.mc_gs  = (regs[REG_CSGSFS] >> 16) & 0xFFFF;
 #endif
         handler(POSIX_SIGUSR1, &ctx);
     }
@@ -73,8 +79,8 @@ void ExceptionHandler(void* arg1, void* arg2, void* arg3, PCONTEXT context) {
     const auto handler = Handlers[POSIX_SIGUSR1];
     if (handler) {
         auto ctx = Ucontext{};
-        ctx.uc_mcontext.mc_r8 = context->R8;
-        ctx.uc_mcontext.mc_r9 = context->R9;
+        ctx.uc_mcontext.mc_r8  = context->R8;
+        ctx.uc_mcontext.mc_r9  = context->R9;
         ctx.uc_mcontext.mc_r10 = context->R10;
         ctx.uc_mcontext.mc_r11 = context->R11;
         ctx.uc_mcontext.mc_r12 = context->R12;
@@ -89,8 +95,8 @@ void ExceptionHandler(void* arg1, void* arg2, void* arg3, PCONTEXT context) {
         ctx.uc_mcontext.mc_rax = context->Rax;
         ctx.uc_mcontext.mc_rcx = context->Rcx;
         ctx.uc_mcontext.mc_rsp = context->Rsp;
-        ctx.uc_mcontext.mc_fs = context->SegFs;
-        ctx.uc_mcontext.mc_gs = context->SegGs;
+        ctx.uc_mcontext.mc_fs  = context->SegFs;
+        ctx.uc_mcontext.mc_gs  = context->SegGs;
         handler(POSIX_SIGUSR1, &ctx);
     }
 }
